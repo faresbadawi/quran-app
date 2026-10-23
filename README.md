@@ -2,7 +2,7 @@
 
 Eine Lern-App als Web-App (PWA), die wie ein digitaler Lehrer helfen soll – **ersetzt keinen echten Lehrer**. Reines HTML/CSS/JavaScript (ES-Module), kein Build-Schritt, nach dem ersten Laden komplett offline (Text und Audio der 3 Suren).
 
-Funktionen: Suren-Liste · Lesen Vers für Vers (uthmanische Schrift) · Rezitation hören (je Vers, Wiederholung 1/3/5/10×, Tempo 0,75×) · ganze Sure anhören · Auswendig-Modus (Wörter ausblenden, antippen zum Aufdecken) · Fortschritt (gelernt-Markierung, nur auf dem Gerät) · Rezitationsprüfung per Mikrofon, Wort für Wort markiert · Hell/Dunkel · Schriftgröße.
+Bedienung im Stil von Tarteel (unabhängig, nicht mit Tarteel verbunden): Die Sure steht wie im Mushaf als Fließtext mit Versnummern. Unten ein großer Mikrofon-Knopf: Vers antippen, rezitieren, die App stoppt nach kurzer Pause und markiert die Wörter grün (richtig), gelb (unsicher), rot (anders erkannt) oder durchgestrichen (fehlt). Tippe ein rotes Wort an, um „Du hast gesagt / Richtig“ zu sehen. Falsche Wörter landen unter **Meine Fehler**. Der Text lässt sich verdecken (Teils/Verdeckt); beim Rezitieren erscheinen richtige Wörter von selbst. Dazu: Vers anhören mit Wiederholung (1/3/5/10×) und Tempo 0,75×, „Gelernt“-Markierung, Serie (Tage in Folge), Fortsetzen, Hell/Dunkel, Schriftgröße. Die Auswertung kommt nach dem Stoppen, nicht live (Modell braucht 12–20 s).
 
 ## Quellen und Lizenzen
 
@@ -43,7 +43,7 @@ index.html, manifest.webmanifest, sw.js   PWA-Hülle, Service Worker (Cache-List
 css/style.css                              Gestaltung, Hell/Dunkel
 data/quran.json                            Text der 3 Suren (aus tools/fetch-text.mjs)
 audio/alafasy64/                           Verse als MP3 (EveryAyah)
-js/app.js                                  Ansichten und Routing (#/ · #/s/78 · #/s/78/5)
+js/app.js                                  Ansichten und Routing (#/ · #/s/78 · #/s/78/5 · #/mistakes)
 js/player.js hide.js store.js              Audio, Ausblenden, Fortschritt
 js/recite.js asr-worker.js compare.js      Mikrofon, Modell (Web Worker), Wortvergleich
 js/i18n.js, js/lang/de.js                  Texte der Oberfläche

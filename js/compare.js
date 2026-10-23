@@ -31,7 +31,7 @@ export function similarity(a, b) {
 }
 
 // Liefert für jedes erwartete Wort: { status: 'ok' | 'close' | 'wrong' | 'missing', heard } sowie zusätzlich gehörte Wörter.
-export function compareVerse(expectedWords, recognizedText) {
+export function compareVerse(expectedWords, recognizedText, { open = false } = {}) {
   const exp = expectedWords.map(normalizeWord);
   const got = recognizedText.split(/\s+/).map((w) => ({ raw: w, n: normalizeWord(w) })).filter((w) => w.n);
   const OK = 0.8, CLOSE = 0.55;
@@ -46,7 +46,14 @@ export function compareVerse(expectedWords, recognizedText) {
     score[i][j] = Math.max(score[i - 1][j - 1] + sub(i - 1, j - 1), score[i - 1][j] + gap, score[i][j - 1] + gap);
   }
   const words = new Array(m), extra = [];
+  // open: Es wird nur bis dorthin bewertet, wo der Sprecher aufgehört hat (Rest = 'rest').
   let i = m, j = n;
+  if (open) {
+    let best = 0;
+    for (let k = 1; k <= m; k++) if (score[k][n] > score[best][n] + 1e-9) best = k;
+    for (let k = best; k < m; k++) words[k] = { status: 'rest', heard: '' };
+    i = best;
+  }
   while (i > 0 || j > 0) {
     if (i > 0 && j > 0 && Math.abs(score[i][j] - (score[i - 1][j - 1] + sub(i - 1, j - 1))) < 1e-9) {
       const s = similarity(exp[i - 1], got[j - 1].n);
@@ -57,6 +64,7 @@ export function compareVerse(expectedWords, recognizedText) {
       words[i - 1] = { status: 'missing', heard: '' }; i--;
     } else { extra.unshift(got[j - 1].raw); j--; }
   }
+  const judged = words.filter((w) => w.status !== 'rest').length;
   const ok = words.filter((w) => w.status === 'ok').length;
-  return { words, extra, ok, total: m, score: m ? ok / m : 0 };
+  return { words, extra, ok, total: judged, score: judged ? ok / judged : 0 };
 }

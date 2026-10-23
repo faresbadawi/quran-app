@@ -60,7 +60,8 @@ function resample(data, from, to) {
 }
 
 export class Recorder {
-  async start() {
+  // onLevel(0..1) für die Anzeige; onSilence() wird gerufen, wenn nach dem Sprechen ca. 2 s Stille war.
+  async start({ onLevel, onSilence } = {}) {
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) throw new Error('missing');
     this.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, channelCount: 1 } });
     this.chunks = [];
@@ -68,8 +69,25 @@ export class Recorder {
     this.rec.ondataavailable = (e) => e.data.size && this.chunks.push(e.data);
     this.started = Date.now();
     this.rec.start();
+    // Pegel und Stilleerkennung
+    const AC = window.AudioContext || window.webkitAudioContext;
+    this.ctx = new AC();
+    const an = this.ctx.createAnalyser(); an.fftSize = 1024;
+    this.ctx.createMediaStreamSource(this.stream).connect(an);
+    const buf = new Float32Array(an.fftSize);
+    let noise = 0.01, spoke = false, quietSince = 0, n = 0;
+    this.timer = setInterval(() => {
+      an.getFloatTimeDomainData(buf);
+      const rms = Math.sqrt(buf.reduce((a, b) => a + b * b, 0) / buf.length);
+      if (n++ < 6) noise = Math.max(noise, rms);            // erste 0,6 s: Grundrauschen messen
+      const loud = rms > Math.max(0.02, noise * 2.5);
+      onLevel?.(Math.min(1, rms * 8));
+      if (loud) { spoke = true; quietSince = 0; }
+      else if (spoke) { quietSince ||= Date.now(); if (Date.now() - quietSince > 2200) { clearInterval(this.timer); onSilence?.(); } }
+    }, 100);
   }
   stop() {
+    clearInterval(this.timer); this.ctx?.close();
     return new Promise((resolve) => {
       this.rec.onstop = () => {
         this.stream.getTracks().forEach((t) => t.stop());
@@ -78,5 +96,5 @@ export class Recorder {
       this.rec.stop();
     });
   }
-  cancel() { try { this.rec.onstop = null; this.rec.stop(); } catch { /* schon gestoppt */ } this.stream?.getTracks().forEach((t) => t.stop()); }
+  cancel() { clearInterval(this.timer); this.ctx?.close(); try { this.rec.onstop = null; this.rec.stop(); } catch { /* schon gestoppt */ } this.stream?.getTracks().forEach((t) => t.stop()); }
 }
